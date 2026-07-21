@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Economic Data Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #070c14;
+  --surface: #0d1520;
+  --surface2: #111d2e;
+  --surface3: #162236;
+  --border: #1c2f47;
+  --border2: #243a56;
+  --accent: #00e5b4;
+  --accent-dim: rgba(0,229,180,0.12);
+  --accent-dim2: rgba(0,229,180,0.06);
+  --blue: #4a9eff;
+  --amber: #f5a623;
+  --red: #ff5252;
+  --green: #00e5b4;
+  --text: #cdd9e8;
+  --text2: #7a90a8;
+  --text3: #4a5e74;
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'IBM Plex Sans', sans-serif;
+  --r: 8px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ── API KEY MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(7,12,20,0.92);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.modal-overlay.hidden { display: none; }
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  padding: 36px;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+}
+
+.modal-icon {
+  width: 44px; height: 44px;
+  border-radius: 10px;
+  background: var(--accent-dim);
+  border: 1px solid rgba(0,229,180,0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  margin-bottom: 20px;
+}
+
+.modal h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.modal p {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.modal a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.modal a:hover { text-decoration: underline; }
+
+.modal-input-wrap {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.modal input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 11px 14px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.modal input:focus { border-color: var(--accent); }
+.modal input::placeholder { color: var(--text3); }
+
+.modal-btn {
+  width: 100%;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  color: #070c14;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  margin-top: 4px;
+}
+.modal-btn:hover { opacity: 0.85; }
+
+.modal-note {
+  font-size: 11px;
+  color: var(--text3);
+  text-align: center;
+  margin-top: 12px;
+  font-family: var(--mono);
+}
+
+/* ── HEADER ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 28px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pulse-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+  animation: pulseDot 2.5s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; box-shadow: 0 0 10px var(--accent); }
+  50% { opacity: 0.4; box-shadow: 0 0 4px var(--accent); }
+}
+
+.header-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text2);
+}
+
+.refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 6px 12px;
+  color: var(--text2);
+  font-family: var(--mono);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+.refresh-btn.spinning svg { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.api-key-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 12px;
+  color: var(--text3);
+  font-family: var(--mono);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.api-key-btn:hover { border-color: var(--border2); color: var(--text2); }
+
+/* ── MAIN ── */
+.main {
+  padding: 24px 28px 40px;
+  max-width: 1440px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* ── SECTION HEADERS ── */
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.section-tag {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.section-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, var(--border2), transparent);
+}
+
+/* ── STAT CARDS ── */
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: border-color 0.2s;
+}
+.stat-card:hover { border-color: var(--border2); }
+
+.stat-card .lbl {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text2);
+}
+.stat-card .val {
+  font-family: var(--mono);
+  font-size: 24px;
+  font-weight: 400;
+  color: var(--text);
+  line-height: 1.1;
+}
+.stat-card .chg {
+  font-family: var(--mono);
+  font-size: 11px;
+  margin-top: 2px;
+}
+.stat-card .sub {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text2);
+}
+
+.pos { color: #00e5b4; }
+.neg { color: #ff5252; }
+.neu { color: var(--text2); }
+.amber { color: var(--amber); }
+
+/* ── CARD ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+}
+.card-head-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text2);
+}
+.card-head-meta {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+}
+
+/* ── TABLE ── */
+table { width: 100%; border-collapse: collapse; }
+th {
+  padding: 9px 14px;
+  text-align: left;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text3);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  background: var(--surface2);
+}
+th:not(:first-child) { text-align: right; }
+td {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(28,47,71,0.5);
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text);
+  white-space: nowrap;
+}
+td:not(:first-child) { text-align: right; }
+tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: rgba(255,255,255,0.015); }
+.td-label { color: var(--text2); font-size: 12px; }
+.td-strong { color: var(--text); font-weight: 500; }
+.highlight-row td { background: var(--accent-dim2) !important; }
+.highlight-row .td-label { color: var(--accent) !important; }
+
+/* ── GRID LAYOUTS ── */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+/* ── YIELD CHART ── */
+.chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 20px 20px 16px;
+}
+.chart-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text2);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.chart-as-of {
+  color: var(--text3);
+  font-size: 10px;
+}
+canvas { display: block; width: 100% !important; }
+
+/* ── LOADING STATE ── */
+.loading {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text3);
+  padding: 18px 14px;
+  text-align: center;
+  letter-spacing: 0.06em;
+}
+.shimmer {
+  background: linear-gradient(90deg, var(--surface2) 25%, var(--surface3) 50%, var(--surface2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 3px;
+  display: inline-block;
+}
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* ── ERROR BANNER ── */
+.error-banner {
+  background: rgba(255,82,82,0.08);
+  border: 1px solid rgba(255,82,82,0.2);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: #ff5252;
+  display: none;
+}
+.error-banner.visible { display: block; }
+
+/* ── BADGE ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+.badge-amber { background: rgba(245,166,35,0.12); border: 1px solid rgba(245,166,35,0.25); color: var(--amber); }
+.badge-green { background: rgba(0,229,180,0.1); border: 1px solid rgba(0,229,180,0.25); color: var(--accent); }
+.badge-red   { background: rgba(255,82,82,0.1);  border: 1px solid rgba(255,82,82,0.25);  color: #ff5252; }
+
+/* ── CPI TABLE SPECIAL ── */
+.cpi-scroll { overflow-x: auto; }
+
+/* ── FOOTER ── */
+.footer {
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+  padding: 20px 0;
+  border-top: 1px solid var(--border);
+  letter-spacing: 0.06em;
+}
+
+/* ── FADE-UP ANIMATION ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.45s ease both; }
+.fd1 { animation-delay: 0.05s; }
+.fd2 { animation-delay: 0.1s; }
+.fd3 { animation-delay: 0.15s; }
+.fd4 { animation-delay: 0.2s; }
+
+@media (max-width: 1100px) {
+  .stat-row { grid-template-columns: repeat(3, 1fr); }
+  .g2 { grid-template-columns: 1fr; }
+  .g3 { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 700px) {
+  .main { padding: 16px; }
+  .stat-row { grid-template-columns: repeat(2, 1fr); }
+  .g3 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- API KEY MODAL -->
+<div class="modal-overlay hidden" id="keyModal">
+  <div class="modal">
+    <div class="modal-icon">🔑</div>
+    <h2>Connect to FRED</h2>
+
+    <div style="background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.25);border-radius:8px;padding:12px 14px;margin-bottom:16px;">
+      <p style="color:#f5a623;font-size:12px;font-weight:600;margin-bottom:4px;">⚠ Run this file locally</p>
+      <p style="color:#a07830;font-size:12px;margin:0;line-height:1.5;">
+        Claude's preview blocks external API calls. <strong style="color:#cba050">Download the HTML file</strong>, then open it in your browser directly — or run:<br>
+        <code style="display:inline-block;margin-top:6px;background:rgba(0,0,0,0.3);padding:3px 8px;border-radius:4px;font-size:11px;">python3 -m http.server 8080</code>
+      </p>
+    </div>
+
+    <p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:16px;">
+      Pulls live Treasury yields, CPI, GDP, unemployment, jobless claims, and Fed rates from the St. Louis Fed's free API. Key stays in this tab only — never stored anywhere.
+    </p>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:16px;">
+      Free key (30 sec signup): <a href="https://fred.stlouisfed.org/docs/api/api_key.html" target="_blank">fred.stlouisfed.org/docs/api/api_key.html</a>
+    </p>
+
+    <div class="modal-input-wrap">
+      <input type="text" id="keyInput" placeholder="Paste your FRED API key here" autocomplete="off" spellcheck="false" />
+    </div>
+    <div id="keyError" style="display:none;font-family:var(--mono);font-size:11px;color:#ff5252;margin-bottom:8px;padding:8px 10px;background:rgba(255,82,82,0.08);border:1px solid rgba(255,82,82,0.2);border-radius:6px;"></div>
+    <button class="modal-btn" id="keySubmit">Load Dashboard →</button>
+    <p class="modal-note">Key stored in session memory only · Sent only to api.stlouisfed.org</p>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="pulse-dot"></div>
+    <span class="header-title">Economic Data Report</span>
+  </div>
+  <div class="header-right">
+    <span class="status-pill" id="lastFetch">—</span>
+    <button class="refresh-btn" id="refreshBtn" onclick="loadAll()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/>
+      </svg>
+      Refresh
+    </button>
+    <button class="api-key-btn" onclick="document.getElementById('keyModal').classList.remove('hidden')">
+      ⚙ API Key
+    </button>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+  <div id="errorBanner" class="error-banner"></div>
+
+  <!-- KEY RATES STATS -->
+  <div class="fade-up">
+    <div class="section-head"><span class="section-tag">Key Rates</span><div class="section-line"></div></div>
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="lbl">Fed Funds Rate</div>
+        <div class="val" id="s-fedfunds">—</div>
+        <div class="chg" id="s-fedfunds-chg">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="lbl">Upper Target</div>
+        <div class="val" id="s-upper">—</div>
+        <div class="sub" id="s-lower-sub">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="lbl">30-Yr Mortgage</div>
+        <div class="val" id="s-mortgage">—</div>
+        <div class="sub">Weekly avg</div>
+      </div>
+      <div class="stat-card">
+        <div class="lbl">Prime Rate</div>
+        <div class="val" id="s-prime">—</div>
+        <div class="sub">Fed Funds + spread</div>
+      </div>
+      <div class="stat-card">
+        <div class="lbl">10-Yr Treasury</div>
+        <div class="val" id="s-10yr">—</div>
+        <div class="sub" id="s-10yr-sub">Benchmark</div>
+      </div>
+      <div class="stat-card">
+        <div class="lbl">10–2yr Spread</div>
+        <div class="val" id="s-spread" style="color:var(--amber)">—</div>
+        <div class="chg" id="s-spread-chg">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- YIELD CURVE -->
+  <div class="fade-up fd1">
+    <div class="section-head"><span class="section-tag">Treasury Yield Curve</span><div class="section-line"></div></div>
+    <div class="chart-card">
+      <div class="chart-title">
+        <span>U.S. Treasury Yields — Full Curve</span>
+        <span class="chart-as-of" id="yieldAsOf">Loading…</span>
+      </div>
+      <canvas id="yieldChart" height="180"></canvas>
+    </div>
+  </div>
+
+  <!-- TREASURY YIELDS TABLE -->
+  <div class="fade-up fd2">
+    <div class="section-head"><span class="section-tag">Treasury Yields</span><div class="section-line"></div></div>
+    <div class="card">
+      <div class="card-head">
+        <span class="card-head-title">Yield Detail</span>
+        <span class="card-head-meta" id="tsy-date">—</span>
+      </div>
+      <table id="tsyTable">
+        <thead>
+          <tr>
+            <th>Maturity</th><th>Yield</th>
+            <th>Maturity</th><th>Yield</th>
+            <th>Maturity</th><th>Yield</th>
+          </tr>
+        </thead>
+        <tbody id="tsyBody">
+          <tr><td colspan="6" class="loading">Loading yields…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- GDP + UNEMPLOYMENT -->
+  <div class="g2 fade-up fd2">
+    <!-- GDP -->
+    <div>
+      <div class="section-head"><span class="section-tag">GDP Growth</span><div class="section-line"></div></div>
+      <div class="card">
+        <div class="card-head">
+          <span class="card-head-title">Annualized GDP (SA)</span>
+          <span class="card-head-meta">Quarterly % change</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th id="gdp-q0">—</th>
+              <th id="gdp-q1">—</th>
+              <th id="gdp-q2">—</th>
+              <th id="gdp-q3">—</th>
+              <th id="gdp-q4">—</th>
+            </tr>
+          </thead>
+          <tbody id="gdpBody">
+            <tr><td colspan="6" class="loading">Loading GDP…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- LABOR -->
+    <div>
+      <div class="section-head"><span class="section-tag">Labor Market</span><div class="section-line"></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="stat-card">
+          <div class="lbl">Unemployment Rate</div>
+          <div class="val" id="s-unrate">—</div>
+          <div class="chg" id="s-unrate-chg">—</div>
+          <div class="sub" id="s-unrate-date">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="lbl">Initial Claims</div>
+          <div class="val" id="s-icsa" style="font-size:20px">—</div>
+          <div class="chg" id="s-icsa-wow">—</div>
+          <div class="sub" id="s-icsa-date">—</div>
+        </div>
+        <div class="stat-card" style="grid-column:1/-1">
+          <div class="lbl">Continued Claims</div>
+          <div class="val" id="s-ccsa" style="font-size:20px">—</div>
+          <div class="chg" id="s-ccsa-wow">—</div>
+          <div class="sub" id="s-ccsa-date">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CPI -->
+  <div class="fade-up fd3">
+    <div class="section-head"><span class="section-tag">Consumer Price Index</span><div class="section-line"></div></div>
+    <div class="card">
+      <div class="card-head">
+        <span class="card-head-title">CPI — Monthly SA, Year-over-Year %</span>
+        <span class="card-head-meta">12 most recent months</span>
+      </div>
+      <div class="cpi-scroll">
+        <table id="cpiTable">
+          <thead id="cpiHead">
+            <tr><th>Measure</th><th colspan="12" style="text-align:center">Loading…</th></tr>
+          </thead>
+          <tbody id="cpiBody">
+            <tr><td colspan="13" class="loading">Loading CPI…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- STOCK INDICES -->
+  <div class="fade-up fd4">
+    <div class="section-head"><span class="section-tag">Stock Indices</span><div class="section-line"></div></div>
+    <div class="card">
+      <div class="card-head">
+        <span class="card-head-title">Major Indices</span>
+        <span class="card-head-meta" id="stock-note">Live prices via Yahoo Finance · may be delayed</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Index</th><th>Price</th><th>Chg Today</th><th>Past Week</th><th>YTD</th><th>12-Month</th><th>50-day MA</th><th>200-day MA</th><th>vs 200d MA</th>
+          </tr>
+        </thead>
+        <tbody id="stockBody">
+          <tr><td colspan="9" class="loading">Fetching market data…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  Data: FRED (St. Louis Fed) · Yahoo Finance · Refreshed <span id="footerTs">—</span>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// ──────────────────────────────────────────────────────────────
+// STATE
+// ──────────────────────────────────────────────────────────────
+let FRED_KEY = '4fb697eceda27670ba2bb7311587940f';
+let FMP_KEY = '8RgzwgmcagF3jEE84OMxdKA8L9LLNosT';
+let yieldChart = null;
+
+// ──────────────────────────────────────────────────────────────
+// MODAL LOGIC
+// ──────────────────────────────────────────────────────────────
+const modalEl = document.getElementById('keyModal');
+const keyInput = document.getElementById('keyInput');
+const keySubmit = document.getElementById('keySubmit');
+
+window.addEventListener('DOMContentLoaded', () => loadAll());
+
+async function testAndLoad() {
+  const k = keyInput.value.trim();
+  const errEl = document.getElementById('keyError');
+  errEl.style.display = 'none';
+
+  if (!k) {
+    keyInput.style.borderColor = '#ff5252';
+    errEl.textContent = 'Please enter your FRED API key.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  keySubmit.textContent = 'Testing connection…';
+  keySubmit.disabled = true;
+
+  try {
+    const testUrl = `https://api.stlouisfed.org/fred/series/observations?series_id=DFF&api_key=${k}&file_type=json&limit=1&sort_order=desc`;
+    const res = await fetch(testUrl);
+    const data = await res.json();
+
+    if (data.error_code) {
+      throw new Error(`FRED error ${data.error_code}: ${data.error_message}`);
+    }
+    if (!data.observations) {
+      throw new Error('Unexpected FRED response: ' + JSON.stringify(data).slice(0, 200));
+    }
+
+    // Success
+    FRED_KEY = k;
+    modalEl.classList.add('hidden');
+    loadAll();
+
+  } catch (err) {
+    let msg = err.message || 'Unknown error';
+    errEl.textContent = '✗ ' + msg;
+    errEl.style.display = 'block';
+    keyInput.style.borderColor = '#ff5252';
+  } finally {
+    keySubmit.textContent = 'Load Dashboard →';
+    keySubmit.disabled = false;
+  }
+}
+
+keySubmit.addEventListener('click', testAndLoad);
+keyInput.addEventListener('keydown', e => { if (e.key === 'Enter') testAndLoad(); });
+
+// ──────────────────────────────────────────────────────────────
+// FRED FETCH HELPER
+// ──────────────────────────────────────────────────────────────
+async function fredFetch(seriesId, params = {}) {
+  const base = 'https://api.stlouisfed.org/fred/series/observations';
+  const defaults = { series_id: seriesId, api_key: FRED_KEY, file_type: 'json', sort_order: 'desc', limit: 30 };
+  const merged = { ...defaults, ...params };
+  const fredUrl = `${base}?${new URLSearchParams(merged)}`;
+
+  // Try direct first (works when FRED allows CORS)
+  try {
+    const res = await fetch(fredUrl);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.observations) return data.observations.filter(o => o.value !== '.' && o.value !== '');
+      if (data.error_message) throw new Error(data.error_message);
+    }
+  } catch(e) {
+    if (e.message && !e.message.includes('fetch')) throw e;
+  }
+
+  // Fallback: CORS proxy
+  const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(fredUrl)}`;
+  const res = await fetch(proxy);
+  if (!res.ok) throw new Error(`Proxy error ${res.status}`);
+  const wrapper = await res.json();
+  const data = JSON.parse(wrapper.contents);
+  if (data.error_message) throw new Error(data.error_message);
+  if (!data.observations) throw new Error('No data returned from FRED');
+  return data.observations.filter(o => o.value !== '.' && o.value !== '');
+}
+
+function latestVal(obs) { return parseFloat(obs[0].value); }
+function latestDate(obs) { return obs[0].date; }
+
+function pct(v, decimals = 2) { return v.toFixed(decimals) + '%'; }
+function pctSign(v, decimals = 2) { return (v >= 0 ? '+' : '') + v.toFixed(decimals) + '%'; }
+function fmtNum(v) { return Number(v).toLocaleString('en-US'); }
+function colorClass(v) { return v > 0 ? 'pos' : v < 0 ? 'neg' : 'neu'; }
+
+function setEl(id, html, cls) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = html;
+  if (cls) el.className = cls;
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorBanner');
+  el.textContent = msg;
+  el.classList.add('visible');
+}
+
+// ──────────────────────────────────────────────────────────────
+// FORMAT DATE
+// ──────────────────────────────────────────────────────────────
+function fmtDate(d) {
+  const [y, m, day] = d.split('-');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${months[+m-1]} ${+day}, ${y}`;
+}
+
+function quarterLabel(dateStr) {
+  const [y, m] = dateStr.split('-').map(Number);
+  const q = Math.ceil(m / 3);
+  return `Q${q} ${y}`;
+}
+
+// ──────────────────────────────────────────────────────────────
+// YIELD CURVE
+// ──────────────────────────────────────────────────────────────
+const YIELD_SERIES = [
+  { id: 'DGS1MO', label: '1 Mo' },
+  { id: 'DGS3MO', label: '3 Mo' },
+  { id: 'DGS6MO', label: '6 Mo' },
+  { id: 'DGS1',   label: '1 Yr' },
+  { id: 'DGS2',   label: '2 Yr' },
+  { id: 'DGS3',   label: '3 Yr' },
+  { id: 'DGS5',   label: '5 Yr' },
+  { id: 'DGS7',   label: '7 Yr' },
+  { id: 'DGS10',  label: '10 Yr' },
+  { id: 'DGS20',  label: '20 Yr' },
+  { id: 'DGS30',  label: '30 Yr' },
+];
+
+async function loadYields() {
+  const results = await Promise.all(
+    YIELD_SERIES.map(s => fredFetch(s.id, { limit: 5 }))
+  );
+
+  const labels = [];
+  const values = [];
+  const dateRef = results[8][0].date; // 10yr date
+
+  results.forEach((obs, i) => {
+    labels.push(YIELD_SERIES[i].label);
+    values.push(obs.length ? parseFloat(obs[0].value) : null);
+  });
+
+  // Spread
+  const yr10 = values[8];
+  const yr2  = values[4];
+  const spread = (yr10 != null && yr2 != null) ? yr10 - yr2 : null;
+
+  setEl('yieldAsOf', `As of ${fmtDate(dateRef)}`);
+  setEl('tsy-date', fmtDate(dateRef));
+  setEl('s-10yr', yr10 != null ? pct(yr10) : '—');
+
+  if (spread != null) {
+    setEl('s-spread', pctSign(spread));
+    setEl('s-spread-chg', spread > 0
+      ? '<span class="pos">Upward sloping</span>'
+      : '<span class="neg">Inverted</span>');
+  }
+
+  // Build yield table: 4 cols (maturity, yield) x 3 pairs
+  const rows = [
+    [0,1,2], [3,4,5], [6,7,8]
+  ];
+  const tbody = document.getElementById('tsyBody');
+  tbody.innerHTML = '';
+
+  // 4 rows of (maturity, yield, maturity, yield, maturity, yield)
+  for (let row = 0; row < 4; row++) {
+    const indices = [row, row+4, row+8];
+    const tr = document.createElement('tr');
+    if (row === 3) {
+      // last row has only 3 cols (indices 3,7,10 => 1yr, 7yr, 30yr)
+    }
+    indices.forEach(i => {
+      if (i >= YIELD_SERIES.length) {
+        tr.innerHTML += '<td></td><td></td>';
+        return;
+      }
+      const bold = (i === 8) ? ' style="color:var(--accent)"' : '';
+      tr.innerHTML += `<td class="td-label">${YIELD_SERIES[i].label}</td><td${bold}>${values[i] != null ? pct(values[i]) : '—'}</td>`;
+    });
+    tbody.appendChild(tr);
+  }
+
+  // Draw chart
+  drawYieldChart(labels, values);
+  return { values, labels };
+}
+
+function drawYieldChart(labels, values) {
+  const ctx = document.getElementById('yieldChart').getContext('2d');
+
+  if (yieldChart) { yieldChart.destroy(); }
+
+  const grad = ctx.createLinearGradient(0, 0, 0, 240);
+  grad.addColorStop(0, 'rgba(0,229,180,0.22)');
+  grad.addColorStop(1, 'rgba(0,229,180,0)');
+
+  yieldChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Yield (%)',
+        data: values,
+        borderColor: '#00e5b4',
+        borderWidth: 2.5,
+        pointBackgroundColor: '#00e5b4',
+        pointBorderColor: '#0d1520',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        fill: true,
+        backgroundColor: grad,
+        tension: 0.32,
+        spanGaps: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      animation: { duration: 700, easing: 'easeOutCubic' },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#162236',
+          borderColor: '#1c2f47',
+          borderWidth: 1,
+          titleColor: '#7a90a8',
+          bodyColor: '#00e5b4',
+          bodyFont: { family: "'IBM Plex Mono'", size: 13 },
+          titleFont: { family: "'IBM Plex Mono'", size: 10 },
+          callbacks: { label: c => `  ${c.parsed.y != null ? c.parsed.y.toFixed(2) + '%' : 'N/A'}` }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(28,47,71,0.7)', drawBorder: false },
+          ticks: { color: '#4a5e74', font: { family: "'IBM Plex Mono'", size: 11 } }
+        },
+        y: {
+          grid: { color: 'rgba(28,47,71,0.7)', drawBorder: false },
+          ticks: {
+            color: '#4a5e74',
+            font: { family: "'IBM Plex Mono'", size: 11 },
+            callback: v => v.toFixed(2) + '%'
+          }
+        }
+      }
+    }
+  });
+}
+
+// ──────────────────────────────────────────────────────────────
+// FED RATES
+// ──────────────────────────────────────────────────────────────
+async function loadFedRates() {
+  const [ff, upper, lower, mort, prime] = await Promise.all([
+    fredFetch('FEDFUNDS', { limit: 13 }),
+    fredFetch('DFEDTARU', { limit: 5 }),
+    fredFetch('DFEDTARL', { limit: 5 }),
+    fredFetch('MORTGAGE30US', { limit: 5 }),
+    fredFetch('MPRIME', { limit: 5 }),
+  ]);
+
+  const ffVal = latestVal(ff);
+  const ffPrev = ff.length > 6 ? parseFloat(ff[6].value) : null;
+  const ffChg = ffPrev ? ffVal - ffPrev : null;
+
+  setEl('s-fedfunds', pct(ffVal));
+  if (ffChg != null) {
+    setEl('s-fedfunds-chg', `<span class="${colorClass(ffChg)}">${pctSign(ffChg)} 6-mo</span>`);
+  }
+  setEl('s-upper', pct(latestVal(upper)));
+  setEl('s-lower-sub', `Lower target: ${pct(latestVal(lower))}`);
+  setEl('s-mortgage', pct(latestVal(mort)));
+  setEl('s-prime', pct(latestVal(prime)));
+}
+
+// ──────────────────────────────────────────────────────────────
+// GDP
+// ──────────────────────────────────────────────────────────────
+async function loadGDP() {
+  // GDP = nominal billions, GDPC1 = real chained 2017$
+  const [nom, real] = await Promise.all([
+    fredFetch('GDP', { limit: 8 }),
+    fredFetch('GDPC1', { limit: 8 }),
+  ]);
+
+  // Calculate annualized QoQ % change: ((curr/prev)^4 - 1) * 100
+  function annualized(obs, i) {
+    if (i + 1 >= obs.length) return null;
+    const curr = parseFloat(obs[i].value);
+    const prev = parseFloat(obs[i+1].value);
+    return (Math.pow(curr / prev, 4) - 1) * 100;
+  }
+
+  // 5 most recent quarters
+  const quarters = nom.slice(0, 5).map((o, i) => quarterLabel(o.date));
+  const nomGrowth = nom.slice(0, 5).map((_, i) => annualized(nom, i));
+  const realGrowth = real.slice(0, 5).map((_, i) => annualized(real, i));
+
+  // Set headers
+  quarters.forEach((q, i) => setEl(`gdp-q${i}`, q));
+
+  const tbody = document.getElementById('gdpBody');
+  function gdpRow(label, growths) {
+    return `<tr>
+      <td class="td-label">${label}</td>
+      ${growths.map(v => v != null
+        ? `<td class="${colorClass(v)}">${pctSign(v, 2)}</td>`
+        : '<td class="neu">—</td>'
+      ).join('')}
+    </tr>`;
+  }
+  tbody.innerHTML = gdpRow('Nominal', nomGrowth) + gdpRow('Real', realGrowth);
+}
+
+// ──────────────────────────────────────────────────────────────
+// UNEMPLOYMENT & CLAIMS
+// ──────────────────────────────────────────────────────────────
+async function loadLabor() {
+  const [unrate, icsa, ccsa] = await Promise.all([
+    fredFetch('UNRATE', { limit: 8 }),
+    fredFetch('ICSA', { limit: 5 }),
+    fredFetch('CCSA', { limit: 5 }),
+  ]);
+
+  const unVal = latestVal(unrate);
+  const un6m = unrate.length >= 7 ? parseFloat(unrate[6].value) : null;
+  const unChg = un6m ? unVal - un6m : null;
+
+  setEl('s-unrate', pct(unVal));
+  if (unChg != null) {
+    setEl('s-unrate-chg', `<span class="${unChg > 0 ? 'neg' : 'pos'}">${pctSign(unChg)} 6-mo</span>`);
+  }
+  setEl('s-unrate-date', `As of ${fmtDate(latestDate(unrate))}`);
+
+  // Initial claims
+  const icsaVal = latestVal(icsa);
+  const icsaPrev = icsa.length > 1 ? parseFloat(icsa[1].value) : null;
+  const icsaWoW = icsaPrev ? (icsaVal - icsaPrev) / icsaPrev * 100 : null;
+  setEl('s-icsa', fmtNum(icsaVal));
+  if (icsaWoW != null) {
+    setEl('s-icsa-wow', `<span class="${colorClass(-icsaWoW)}">${pctSign(icsaWoW)} WoW</span>`);
+  }
+  setEl('s-icsa-date', `Week of ${fmtDate(latestDate(icsa))}`);
+
+  // Continued claims
+  const ccsaVal = latestVal(ccsa);
+  const ccsaPrev = ccsa.length > 1 ? parseFloat(ccsa[1].value) : null;
+  const ccsaWoW = ccsaPrev ? (ccsaVal - ccsaPrev) / ccsaPrev * 100 : null;
+  setEl('s-ccsa', fmtNum(ccsaVal));
+  if (ccsaWoW != null) {
+    setEl('s-ccsa-wow', `<span class="${colorClass(-ccsaWoW)}">${pctSign(ccsaWoW)} WoW</span>`);
+  }
+  setEl('s-ccsa-date', `Week of ${fmtDate(latestDate(ccsa))}`);
+}
+
+// ──────────────────────────────────────────────────────────────
+// CPI
+// ──────────────────────────────────────────────────────────────
+async function loadCPI() {
+  // Get 14 months for YoY calc (need 12 months + 12 months back = 24)
+  const [headline, core] = await Promise.all([
+    fredFetch('CPIAUCSL', { limit: 24 }),
+    fredFetch('CPILFESL', { limit: 24 }),
+  ]);
+
+  // Calculate YoY for 12 most recent months
+  function yoyPct(obs, i) {
+    if (i + 12 >= obs.length) return null;
+    const curr = parseFloat(obs[i].value);
+    const prev = parseFloat(obs[i + 12].value);
+    return (curr / prev - 1) * 100;
+  }
+
+  const months = headline.slice(0, 12).map(o => {
+    const [y, m] = o.date.split('-');
+    const labels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return `${labels[+m-1]} '${y.slice(2)}`;
+  });
+
+  const hlYoY  = headline.slice(0, 12).map((_, i) => yoyPct(headline, i));
+  const coreYoY = core.slice(0, 12).map((_, i) => yoyPct(core, i));
+
+  // Build table
+  const thead = document.getElementById('cpiHead');
+  thead.innerHTML = `<tr><th>Measure</th>${months.map(m => `<th>${m}</th>`).join('')}</tr>`;
+
+  function cpiRow(label, vals) {
+    const cells = vals.map(v => v != null
+      ? `<td class="${colorClass(v - 2.5)}">${pct(v)}</td>` // color relative to 2.5% target
+      : '<td class="neu">—</td>'
+    ).join('');
+    return `<tr><td class="td-label" style="white-space:nowrap">${label}</td>${cells}</tr>`;
+  }
+
+  const tbody = document.getElementById('cpiBody');
+  tbody.innerHTML = cpiRow('Headline', hlYoY) + cpiRow('Core (ex. Food &amp; Energy)', coreYoY);
+}
+
+// ──────────────────────────────────────────────────────────────
+// STOCKS (Yahoo Finance via CORS proxy fallback)
+// ──────────────────────────────────────────────────────────────
+const INDICES = [
+  { sym: 'SPY',  label: 'S&P 500',      isCrypto: false },
+  { sym: 'QQQ',  label: 'Nasdaq 100',   isCrypto: false },
+  { sym: 'DIA',  label: 'Dow Jones',    isCrypto: false },
+  { sym: 'IWM',  label: 'Russell 2000', isCrypto: false },
+  { sym: 'BTCUSD', label: 'Bitcoin',    isCrypto: true  },
+];
+
+async function fetchFMP(symbol) {
+  const base = 'https://financialmodelingprep.com/api/v3';
+
+  // Quote (current price, day change, 50/200 MA, YTD)
+  const quoteRes = await fetch(`${base}/quote/${symbol}?apikey=${FMP_KEY}`);
+  if (!quoteRes.ok) throw new Error(`FMP quote error ${quoteRes.status}`);
+  const quoteData = await quoteRes.json();
+  if (!quoteData.length) throw new Error(`No data for ${symbol}`);
+  const q = quoteData[0];
+
+  // Historical for 1yr change and week change
+  const histRes = await fetch(`${base}/historical-price-full/${symbol}?timeseries=260&apikey=${FMP_KEY}`);
+  const histData = await histRes.json();
+  const hist = (histData.historical || []).filter(d => d.close != null);
+
+  const curr     = q.price;
+  const dayChg   = q.changesPercentage;
+  const ma50     = q.priceAvg50;
+  const ma200    = q.priceAvg200;
+  const vsMA200  = ma200 ? (curr - ma200) / ma200 * 100 : null;
+  const ytdChg   = q.ytdChange ?? null;
+
+  const weekAgo  = hist[4]?.close;
+  const yearAgo  = hist[hist.length - 1]?.close;
+  const weekChg  = weekAgo ? (curr - weekAgo) / weekAgo * 100 : null;
+  const yrChg    = yearAgo ? (curr - yearAgo) / yearAgo * 100 : null;
+
+  return { curr, dayChg, weekChg, yrChg, ytdChg, ma50, ma200, vsMA200 };
+}
+
+async function loadStocks() {
+  const tbody = document.getElementById('stockBody');
+
+  const rows = await Promise.allSettled(INDICES.map(idx => fetchFMP(idx.sym)));
+
+  const allFailed = rows.every(r => r.status === 'rejected');
+  if (allFailed) {
+    tbody.innerHTML = `<tr><td colspan="9" style="padding:16px 14px;font-family:var(--mono);font-size:11px;color:var(--text3);text-align:center">
+      Could not load stock data. Check FMP API key or daily limit.
+    </td></tr>`;
+    return;
+  }
+
+  let html = '';
+  rows.forEach((result, i) => {
+    const idx = INDICES[i];
+    if (result.status === 'rejected') {
+      html += `<tr><td class="td-label">${idx.label}</td><td colspan="8" class="neu" style="font-size:11px">${result.reason?.message || 'Error'}</td></tr>`;
+      return;
+    }
+
+    const q = result.value;
+    const fmtPrice = idx.isCrypto
+      ? '$' + q.curr.toLocaleString('en-US', { maximumFractionDigits: 0 })
+      : q.curr.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const fmtMA = v => v ? v.toLocaleString('en-US', { maximumFractionDigits: 0 }) : '—';
+
+    html += `<tr>
+      <td class="td-strong">${idx.label}</td>
+      <td>${fmtPrice}</td>
+      <td class="${colorClass(q.dayChg)}">${q.dayChg != null ? pctSign(q.dayChg) : '—'}</td>
+      <td class="${colorClass(q.weekChg)}">${q.weekChg != null ? pctSign(q.weekChg) : '—'}</td>
+      <td class="${colorClass(q.ytdChg)}">${q.ytdChg != null ? pctSign(q.ytdChg) : '—'}</td>
+      <td class="${colorClass(q.yrChg)}">${q.yrChg != null ? pctSign(q.yrChg) : '—'}</td>
+      <td class="neu">${fmtMA(q.ma50)}</td>
+      <td class="neu">${fmtMA(q.ma200)}</td>
+      <td class="${q.vsMA200 > 0 ? 'pos' : 'neg'}">${q.vsMA200 != null ? pctSign(q.vsMA200) : '—'}</td>
+    </tr>`;
+  });
+  tbody.innerHTML = html;
+}
+
+// ──────────────────────────────────────────────────────────────
+// LOAD ALL
+// ──────────────────────────────────────────────────────────────
+async function loadAll() {
+  if (!FRED_KEY) { document.getElementById('keyModal').classList.remove('hidden'); return; }
+
+  const btn = document.getElementById('refreshBtn');
+  btn.classList.add('spinning');
+  document.getElementById('errorBanner').classList.remove('visible');
+
+  try {
+    await Promise.all([
+      loadYields(),
+      loadFedRates(),
+      loadGDP(),
+      loadLabor(),
+      loadCPI(),
+      loadStocks(),
+    ]);
+
+    const now = new Date();
+    const ts = now.toLocaleString('en-US', { month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit' });
+    setEl('lastFetch', `Updated ${ts}`);
+    setEl('footerTs', ts);
+
+  } catch(err) {
+    console.error(err);
+    showError('Error loading data: ' + (err.message || 'Unknown error') + ' — open browser console (F12) for details.');
+  } finally {
+    btn.classList.remove('spinning');
+  }
+}
+</script>
+</body>
+</html>
